@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tobis Weihnachtswünsche</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎄</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night: #0c2a25;
+  --night-deep: #071a17;
+  --snow: #f6fbff;
+  --paper: #fff9ee;
+  --ink: #23302c;
+  --berry: #b0243a;
+  --berry-dark: #8c1b2e;
+  --gold: #e3b95c;
+  --muted: #5d6b66;
+}
+* { box-sizing: border-box; }
+html { background: var(--night-deep); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--snow);
+  font-family: "Nunito Sans", system-ui, sans-serif;
+  line-height: 1.55;
+  background:
+    radial-gradient(ellipse at 50% -10%, #17483f 0%, transparent 60%),
+    linear-gradient(180deg, var(--night) 0%, var(--night-deep) 100%);
+  background-attachment: fixed;
+}
+#snow { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+main { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 56px 20px 80px; }
+header { max-width: 38rem; margin-bottom: 44px; }
+h1 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  line-height: 1.08;
+  margin: 0 0 14px;
+  color: var(--snow);
+  text-shadow: 0 2px 0 rgba(176, 36, 58, .55);
+}
+header p { margin: 0; font-size: 1.1rem; color: #cfe3dc; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 34px 26px; }
+.card {
+  position: relative;
+  display: flex; flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px 6px 18px 18px;
+  padding: 38px 18px 18px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+}
+.card::before { /* Loch des Geschenkanhängers */
+  content: ""; position: absolute; top: 12px; left: 50%;
+  width: 14px; height: 14px; margin-left: -7px;
+  border-radius: 50%; background: var(--night-deep);
+  box-shadow: inset 0 0 0 3px var(--gold);
+}
+.pic {
+  height: 190px; border-radius: 10px; overflow: hidden;
+  background: #f1e6d0; display: grid; place-items: center; font-size: 3rem;
+}
+.pic img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.card h2 { font-family: "Fraunces", Georgia, serif; font-size: 1.25rem; line-height: 1.25; margin: 16px 0 6px; }
+.card p { margin: 0 0 10px; color: var(--muted); font-size: .96rem; }
+.price { margin-top: auto; font-weight: 600; color: var(--berry); padding-bottom: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  font: inherit; font-weight: 600; font-size: .95rem; cursor: pointer; text-decoration: none;
+  padding: 9px 16px; border-radius: 999px; border: 2px solid var(--berry);
+  background: var(--berry); color: #fff; transition: background .15s;
+}
+.btn:hover { background: var(--berry-dark); border-color: var(--berry-dark); }
+.btn.ghost { background: transparent; color: var(--berry); }
+.btn.ghost:hover { background: rgba(176, 36, 58, .08); }
+.btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.state { font-weight: 600; color: #2d6a4f; }
+.card.taken { opacity: .72; }
+.card.taken .pic img { filter: grayscale(.6); }
+.card.taken::after {
+  content: "Schon vergeben"; position: absolute; top: 34px; right: -8px;
+  background: var(--gold); color: #3b2a00; font-weight: 600; font-size: .85rem;
+  padding: 4px 12px; border-radius: 4px; box-shadow: 0 3px 8px rgba(0, 0, 0, .3);
+}
+footer { margin-top: 56px; color: #9fbab1; font-size: .9rem; max-width: 38rem; }
+</style>
+</head>
+<body>
+<canvas id="snow" aria-hidden="true"></canvas>
+<main>
+  <header>
+    <h1 id="title"></h1>
+    <p id="intro"></p>
+  </header>
+  <section class="grid" id="grid" aria-label="Wunschliste"></section>
+  <footer>Es wird nichts gespeichert, weder Namen noch Daten. Ein Klick auf „Das schenke ich dir“ öffnet nur eine vorbereitete Nachricht.</footer>
+</main>
+
+<script type="module">
+import { config, gifts } from "./gifts.js";
+
+document.getElementById("title").textContent = "🎄 " + config.title;
+document.getElementById("intro").textContent = config.intro;
+
+const KEY = "tobi-weihnacht-gemeldet";
+let mine = new Set();
+try { mine = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...mine])); } catch (e) {} };
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text) n.textContent = text;
+  return n;
+}
+
+function reserve(gift) {
+  if (config.contactEmail) {
+    const subject = "Weihnachtsgeschenk: " + gift.title;
+    const body = "Hallo,\n\nich möchte folgendes Geschenk übernehmen:\n" + gift.title + "\n\nBitte als vergeben markieren.";
+    window.location.href = "mailto:" + config.contactEmail +
+      "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  }
+  mine.add(gift.id);
+  save();
+  render();
+}
+
+function render() {
+  const grid = document.getElementById("grid");
+  grid.replaceChildren();
+  for (const g of gifts) {
+    const card = el("article", "card" + (g.reserved ? " taken" : ""));
+    const pic = el("div", "pic");
+    if (g.image) {
+      const img = new Image();
+      img.alt = g.title; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+      img.onerror = () => { pic.replaceChildren("🎁"); };
+      img.src = g.image;
+      pic.append(img);
+    } else pic.textContent = "🎁";
+    card.append(pic, el("h2", "", g.title));
+    if (g.description) card.append(el("p", "", g.description));
+    if (g.price) card.append(el("div", "price", g.price));
+    const actions = el("div", "actions");
+    if (g.url) {
+      const a = el("a", "btn ghost", "Zum Shop");
+      a.href = g.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+      actions.append(a);
+    }
+    if (!g.reserved) {
+      if (mine.has(g.id)) actions.append(el("span", "state", "✓ Von dir gemeldet"));
+      else {
+        const b = el("button", "btn", "Das schenke ich dir");
+        b.type = "button";
+        b.addEventListener("click", () => reserve(g));
+        actions.append(b);
+      }
+    }
+    card.append(actions);
+    grid.append(card);
+  }
+}
+render();
+
+// Schneefall
+const canvas = document.getElementById("snow");
+const ctx = canvas.getContext("2d");
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  let w, h, flakes = [];
+  const resize = () => {
+    const d = devicePixelRatio || 1;
+    w = innerWidth; h = innerHeight;
+    canvas.width = w * d; canvas.height = h * d;
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    const n = Math.min(160, Math.floor(w / 8));
+    flakes = Array.from({ length: n }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      r: Math.random() * 2.6 + .8,
+      v: Math.random() * 0.9 + .35,
+      p: Math.random() * Math.PI * 2
+    }));
+  };
+  resize();
+  addEventListener("resize", resize);
+  let t = 0;
+  (function tick() {
+    t += .01;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "rgba(255,255,255,.88)";
+    for (const f of flakes) {
+      f.y += f.v * (f.r / 2 + .6);
+      f.x += Math.sin(t + f.p) * .45;
+      if (f.y > h + 5) { f.y = -5; f.x = Math.random() * w; }
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.283); ctx.fill();
+    }
+    requestAnimationFrame(tick);
+  })();
+}
+</script>
+</body>
+</html>
