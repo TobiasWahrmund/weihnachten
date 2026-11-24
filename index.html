@@ -77,18 +77,7 @@ header p { margin: 0; font-size: 1.1rem; color: #cfe3dc; }
   background: var(--berry); color: #fff; transition: background .15s;
 }
 .btn:hover { background: var(--berry-dark); border-color: var(--berry-dark); }
-.btn.ghost { background: transparent; color: var(--berry); }
-.btn.ghost:hover { background: rgba(176, 36, 58, .08); }
 .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-.state { font-weight: 600; color: #2d6a4f; }
-.card.taken { opacity: .72; }
-.card.taken .pic img { filter: grayscale(.6); }
-.card.taken::after {
-  content: "Schon vergeben"; position: absolute; top: 34px; right: -8px;
-  background: var(--gold); color: #3b2a00; font-weight: 600; font-size: .85rem;
-  padding: 4px 12px; border-radius: 4px; box-shadow: 0 3px 8px rgba(0, 0, 0, .3);
-}
-footer { margin-top: 56px; color: #9fbab1; font-size: .9rem; max-width: 38rem; }
 </style>
 </head>
 <body>
@@ -99,19 +88,13 @@ footer { margin-top: 56px; color: #9fbab1; font-size: .9rem; max-width: 38rem; }
     <p id="intro"></p>
   </header>
   <section class="grid" id="grid" aria-label="Wunschliste"></section>
-  <footer>Es wird nichts gespeichert, weder Namen noch Daten. Ein Klick auf „Das schenke ich dir“ öffnet nur eine vorbereitete Nachricht.</footer>
 </main>
 
-<script type="module">
-import { config, gifts } from "./gifts.js";
+<script src="gifts.js"></script>
+<script>
 
 document.getElementById("title").textContent = "🎄 " + config.title;
 document.getElementById("intro").textContent = config.intro;
-
-const KEY = "tobi-weihnacht-gemeldet";
-let mine = new Set();
-try { mine = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...mine])); } catch (e) {} };
 
 function el(tag, cls, text) {
   const n = document.createElement(tag);
@@ -120,23 +103,11 @@ function el(tag, cls, text) {
   return n;
 }
 
-function reserve(gift) {
-  if (config.contactEmail) {
-    const subject = "Weihnachtsgeschenk: " + gift.title;
-    const body = "Hallo,\n\nich möchte folgendes Geschenk übernehmen:\n" + gift.title + "\n\nBitte als vergeben markieren.";
-    window.location.href = "mailto:" + config.contactEmail +
-      "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-  }
-  mine.add(gift.id);
-  save();
-  render();
-}
-
 function render() {
   const grid = document.getElementById("grid");
   grid.replaceChildren();
   for (const g of gifts) {
-    const card = el("article", "card" + (g.reserved ? " taken" : ""));
+    const card = el("article", "card");
     const pic = el("div", "pic");
     if (g.image) {
       const img = new Image();
@@ -148,22 +119,13 @@ function render() {
     card.append(pic, el("h2", "", g.title));
     if (g.description) card.append(el("p", "", g.description));
     if (g.price) card.append(el("div", "price", g.price));
-    const actions = el("div", "actions");
     if (g.url) {
-      const a = el("a", "btn ghost", "Zum Shop");
+      const actions = el("div", "actions");
+      const a = el("a", "btn", g.urlLabel || "Zum Shop");
       a.href = g.url; a.target = "_blank"; a.rel = "noopener noreferrer";
       actions.append(a);
+      card.append(actions);
     }
-    if (!g.reserved) {
-      if (mine.has(g.id)) actions.append(el("span", "state", "✓ Von dir gemeldet"));
-      else {
-        const b = el("button", "btn", "Das schenke ich dir");
-        b.type = "button";
-        b.addEventListener("click", () => reserve(g));
-        actions.append(b);
-      }
-    }
-    card.append(actions);
     grid.append(card);
   }
 }

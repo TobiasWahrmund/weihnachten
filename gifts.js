@@ -1,22 +1,16 @@
 // ============================================================
 // TOBIS WEIHNACHTSWUNSCHLISTE
 //
-// Reservierung ohne Datenbank:
-// Wer etwas schenken möchte, klickt "Das schenke ich dir". Dadurch öffnet sich
-// eine vorbereitete E-Mail an die Adresse unten. Am besten nimmst du die Adresse
-// einer Vertrauensperson (nicht deine), dann bleibt es für dich eine Überraschung.
-// Diese Person setzt bei vergebenen Wünschen unten "reserved: true".
+// Pflicht: id (eindeutig), title
+// Optional: description, price, url, urlLabel (Text des Links, Standard: "Zum Shop"), image
 // ============================================================
 
-export const config = {
+const config = {
   title: "Tobis Weihnachtswünsche",
-  intro: "Such dir etwas aus und gib kurz Bescheid. Vergebene Wünsche sind markiert, damit nichts doppelt unter dem Baum liegt.",
-  contactEmail: "" // z. B. "name@beispiel.de" – leer lassen, dann wird nur auf diesem Gerät gemerkt
+  intro: "Ein paar Ideen, worüber ich mich zu Weihnachten freuen würde."
 };
 
-// Pflicht: id (eindeutig), title
-// Optional: description, price, url, image, reserved (true = schon vergeben)
-export const gifts = [
+const gifts = [
   {
     id: "mastering-french-cooking",
     title: "Mastering the Art of French Cooking",
@@ -55,6 +49,7 @@ export const gifts = [
     description: "Sie werden nicht mehr hergestellt, aber ich hätte gerne welche :) Vielleicht kennt ja jemand jemanden, der jemanden kennt... damals waren die Gläser ja weitverbreitet.",
     price: "",
     url: "https://de.wikipedia.org/wiki/Superfest",
+    urlLabel: "Mehr zu Superfest",
     image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Superfest-glas-025-2020.jpg/960px-Superfest-glas-025-2020.jpg"
   },
   {
